@@ -1,3 +1,32 @@
 plugins {
     id 'java'
 }
+
+sourceCompatibility = JavaVersion.VERSION_1_4
+targetCompatibility = JavaVersion.VERSION_1_4
+
+jar {
+    manifest {
+        attributes(
+
+                'Main-Class': 'smarthouse.kindledisplay.SmartHouseDisplay',
+
+                'Implementation-Title': 'Smart House Display',
+                'Implementation-Version': version,
+                'Implementation-Vendor': 'Pavel Savinov (swapii@gmail.com)',
+
+                'Extension-List': 'SDK',
+
+                'SDK-Extension-Name': 'com.amazon.kindle.kindlet',
+                'SDK-Specification-Version': '1.2',
+
+                'Toolbar-Mode': 'persistent',
+                "Font-Size-Mode": "point"
+
+        )
+    }
+}
+
+dependencies {
+    implementation 'com.amazon.kindle:kindlet:1.2'
+}
