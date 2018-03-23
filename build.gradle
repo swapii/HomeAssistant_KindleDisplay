@@ -1,4 +1,13 @@
+
 buildscript {
+
+    Properties localProperties = new Properties()
+    localProperties.load(rootProject.file('local.properties').newDataInputStream())
+
+    ext {
+        amazonEbookLibsDir = localProperties.getProperty('amazon_ebook_libs_dir')
+    }
+
 }
 
 allprojects {

@@ -53,5 +53,5 @@ task azw2(dependsOn: 'signJar', description: 'Copy JAR to AZW2', group: 'Build')
 assemble.finalizedBy azw2
 
 dependencies {
-    implementation 'com.amazon.kindle:kindlet:1.2'
+    implementation fileTree(dir: amazonEbookLibsDir, include: ['*.jar'])
 }
