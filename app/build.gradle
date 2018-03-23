@@ -27,6 +27,31 @@ jar {
     }
 }
 
+task signJar(dependsOn: 'jar', description: 'Sign JAR', group: 'Build') {
+    doLast {
+        ['dktest', 'ditest', 'dntest'].each { key ->
+            ant.signjar(
+                    jar: jar.archivePath,
+                    keystore: new File(project.projectDir, 'developer.keystore'),
+                    storepass: 'password',
+                    alias: key,
+            )
+        }
+    }
+}
+
+task azw2(dependsOn: 'signJar', description: 'Copy JAR to AZW2', group: 'Build') {
+    doLast {
+        copy {
+            from jar.archivePath
+            into new File(project.buildDir, 'app')
+            rename { name -> name.replace('.jar', '.azw2') }
+        }
+    }
+}
+
+assemble.finalizedBy azw2
+
 dependencies {
     implementation 'com.amazon.kindle:kindlet:1.2'
 }
