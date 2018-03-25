@@ -27,11 +27,16 @@ jar {
     }
 }
 
+def signedJar = new File(new File(project.buildDir, 'tmp/jar/signed'), jar.archivePath.name)
+
 task signJar(dependsOn: 'jar', description: 'Sign JAR', group: 'Build') {
+    def originalJar = jar.archivePath
+    inputs.file(originalJar)
+    outputs.file(signedJar)
     doLast {
         ['dktest', 'ditest', 'dntest'].each { key ->
             ant.signjar(
-                    jar: jar.archivePath,
+                    jar: signedJar,
                     keystore: new File(project.projectDir, 'developer.keystore'),
                     storepass: 'password',
                     alias: key,
@@ -41,10 +46,14 @@ task signJar(dependsOn: 'jar', description: 'Sign JAR', group: 'Build') {
 }
 
 task azw2(dependsOn: 'signJar', description: 'Copy JAR to AZW2', group: 'Build') {
+    def originalJar = signedJar
+    def resultAppFile = new File(project.buildDir, 'app')
+    inputs.file(originalJar)
+    outputs.file(resultAppFile)
     doLast {
         copy {
             from jar.archivePath
-            into new File(project.buildDir, 'app')
+            into resultAppFile
             rename { name -> name.replace('.jar', '.azw2') }
         }
     }
