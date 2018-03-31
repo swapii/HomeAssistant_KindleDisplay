@@ -9,9 +9,9 @@ jar {
     manifest {
         attributes(
 
-                'Main-Class': 'smarthouse.kindledisplay.SmartHouseDisplay',
+                'Main-Class': 'homeassistant.display.kindle.HomeAssistantKindleDisplay',
 
-                'Implementation-Title': 'Smart House Display',
+                'Implementation-Title': 'Home Assistant Display',
                 'Implementation-Version': version,
                 'Implementation-Vendor': 'Pavel Savinov (swapii@gmail.com)',
 

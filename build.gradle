@@ -12,8 +12,8 @@ buildscript {
 
 allprojects {
 
-    group 'homeassistant.kindledisplay'
-    version '0.1.0'
+    group = 'homeassistant.display.kindle'
+    version = '0.1.0'
 
     repositories {
         mavenLocal()

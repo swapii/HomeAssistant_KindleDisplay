@@ -1,4 +1,4 @@
-package smarthouse.kindledisplay;
+package homeassistant.display.kindle;
 
 import com.amazon.kindle.kindlet.AbstractKindlet;
 import com.amazon.kindle.kindlet.KindletContext;
@@ -21,7 +21,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.MessageFormat;
 
-public class SmartHouseDisplay extends AbstractKindlet {
+public class HomeAssistantKindleDisplay extends AbstractKindlet {
 
     private Timer timer;
 
