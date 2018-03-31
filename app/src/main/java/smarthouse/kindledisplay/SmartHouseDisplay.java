@@ -2,16 +2,15 @@ package smarthouse.kindledisplay;
 
 import com.amazon.kindle.kindlet.AbstractKindlet;
 import com.amazon.kindle.kindlet.KindletContext;
-import com.amazon.kindle.kindlet.ui.KLabelMultiline;
-import com.amazon.kindle.kindlet.ui.KPanel;
-import com.amazon.kindle.kindlet.ui.KTextComponent;
+import com.amazon.kindle.kindlet.ui.*;
 import com.amazon.kindle.kindlet.util.Timer;
 import com.amazon.kindle.kindlet.util.TimerTask;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import java.awt.BorderLayout;
+import javax.swing.*;
+import java.awt.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -22,23 +21,35 @@ import java.text.MessageFormat;
 public class SmartHouseDisplay extends AbstractKindlet {
 
     private Timer timer;
-    private KLabelMultiline label;
+
+    private KLabelMultiline temperatureLabel;
+    private KLabelMultiline humidityLabel;
+    private KLabelMultiline airQualityLabel;
 
     public void create(KindletContext context) {
         super.create(context);
 
-        label = new KLabelMultiline("Hello, World!");
-        label.setRows(KTextComponent.SHOW_ALL_LINES);
-
         KPanel panel = new KPanel(new BorderLayout(5, 5));
-        panel.add(label);
+        panel.setLayout(new GridLayout(0, 1));
+
+        temperatureLabel = new KLabelMultiline();
+        temperatureLabel.setRows(KTextComponent.SHOW_ALL_LINES);
+        panel.add(temperatureLabel);
+
+        humidityLabel = new KLabelMultiline();
+        humidityLabel.setRows(KTextComponent.SHOW_ALL_LINES);
+        panel.add(humidityLabel);
+
+        airQualityLabel = new KLabelMultiline();
+        airQualityLabel.setRows(KTextComponent.SHOW_ALL_LINES);
+        panel.add(airQualityLabel);
 
         context.getRootContainer().add(panel);
     }
 
     public void start() {
         super.start();
-        updateHumidity();
+        loadDataFromServer();
         scheduleNextTimerRun();
     }
 
@@ -55,21 +66,27 @@ public class SmartHouseDisplay extends AbstractKindlet {
         timer = new Timer();
         timer.schedule(new TimerTask() {
             public void run() {
-                updateHumidity();
+                loadDataFromServer();
                 scheduleNextTimerRun();
             }
         }, 10000);
     }
 
-    private void updateHumidity() {
+    private void loadDataFromServer() {
+        updateSensor("room_temperature", temperatureLabel);
+        updateSensor("room_humidity", humidityLabel);
+        updateSensor("room_air_quality", airQualityLabel);
+    }
 
-        String urlString = "http://192.168.1.21:8123/api/states/sensor.room_humidity";
+    private void updateSensor(final String sensorName, KLabel label) {
+
+        String urlString = "http://192.168.1.21:8123/api/states/sensor." + sensorName;
 
         URL url;
         try {
             url = new URL(urlString);
         } catch (MalformedURLException e) {
-            showText(e.getMessage());
+            showText(e.getMessage(), label);
             e.printStackTrace();
             return;
         }
@@ -78,7 +95,7 @@ public class SmartHouseDisplay extends AbstractKindlet {
         try {
             stream = url.openStream();
         } catch (IOException e) {
-            showText(e.getMessage());
+            showText(e.getMessage(), label);
             e.printStackTrace();
             return;
         }
@@ -90,11 +107,11 @@ public class SmartHouseDisplay extends AbstractKindlet {
         try {
             unknownJson = new JSONParser().parse(reader);
         } catch (ParseException e) {
-            showText(e.getMessage());
+            showText(e.getMessage(), label);
             e.printStackTrace();
             return;
         } catch (IOException e) {
-            showText(e.getMessage());
+            showText(e.getMessage(), label);
             e.printStackTrace();
             return;
         } finally {
@@ -102,7 +119,7 @@ public class SmartHouseDisplay extends AbstractKindlet {
                 reader.close();
             } catch (IOException e) {
                 e.printStackTrace();
-                showText(e.getMessage());
+                showText(e.getMessage(), label);
             }
         }
 
@@ -120,10 +137,10 @@ public class SmartHouseDisplay extends AbstractKindlet {
 
         String text = MessageFormat.format("{0}: {1} {2}", new Object[]{friendlyName, state, unitOfMeasurement});
 
-        showText(text);
+        showText(text, label);
     }
 
-    private void showText(String text) {
+    private void showText(String text, KLabel label) {
         label.setText(text);
         label.repaint();
     }
