@@ -38,7 +38,7 @@ public class SmartHouseDisplay extends AbstractKindlet {
 
     public void start() {
         super.start();
-        updateWeather();
+        updateHumidity();
         scheduleNextTimerRun();
     }
 
@@ -55,15 +55,15 @@ public class SmartHouseDisplay extends AbstractKindlet {
         timer = new Timer();
         timer.schedule(new TimerTask() {
             public void run() {
-                updateWeather();
+                updateHumidity();
                 scheduleNextTimerRun();
             }
         }, 10000);
     }
 
-    private void updateWeather() {
+    private void updateHumidity() {
 
-        String urlString = "http://api.apixu.com/v1/current.json?key=824ae92000b44a7aafe233320182203&q=Moscow";
+        String urlString = "http://192.168.1.21:8123/api/states/sensor.room_humidity";
 
         URL url;
         try {
@@ -112,15 +112,13 @@ public class SmartHouseDisplay extends AbstractKindlet {
 
         JSONObject json = (JSONObject) unknownJson;
 
-        JSONObject location = ((JSONObject) json.get("location"));
-        String city = ((String) location.get("name"));
-        String country = ((String) location.get("country"));
+        String state = ((String) json.get("state"));
 
-        JSONObject current = ((JSONObject) json.get("current"));
-        String temperature = ((Double) current.get("temp_c")).toString();
-        String condition = ((JSONObject) current.get("condition")).get("text").toString();
+        JSONObject attributes = ((JSONObject) json.get("attributes"));
+        String friendlyName = ((String) attributes.get("friendly_name"));
+        String unitOfMeasurement = ((String) attributes.get("unit_of_measurement"));
 
-        String text = MessageFormat.format("{0}, {1}: {2} {3}", new Object[]{country, city, temperature, condition});
+        String text = MessageFormat.format("{0}: {1} {2}", new Object[]{friendlyName, state, unitOfMeasurement});
 
         showText(text);
     }
