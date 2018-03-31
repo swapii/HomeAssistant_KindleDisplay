@@ -2,15 +2,18 @@ package smarthouse.kindledisplay;
 
 import com.amazon.kindle.kindlet.AbstractKindlet;
 import com.amazon.kindle.kindlet.KindletContext;
-import com.amazon.kindle.kindlet.ui.*;
+import com.amazon.kindle.kindlet.ui.KLabel;
+import com.amazon.kindle.kindlet.ui.KLabelMultiline;
+import com.amazon.kindle.kindlet.ui.KPanel;
+import com.amazon.kindle.kindlet.ui.KTextComponent;
 import com.amazon.kindle.kindlet.util.Timer;
 import com.amazon.kindle.kindlet.util.TimerTask;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import javax.swing.*;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.GridLayout;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
