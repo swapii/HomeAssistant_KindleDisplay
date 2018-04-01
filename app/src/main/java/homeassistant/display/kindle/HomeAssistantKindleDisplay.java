@@ -2,51 +2,38 @@ package homeassistant.display.kindle;
 
 import com.amazon.kindle.kindlet.AbstractKindlet;
 import com.amazon.kindle.kindlet.KindletContext;
-import com.amazon.kindle.kindlet.ui.KLabel;
-import com.amazon.kindle.kindlet.ui.KLabelMultiline;
 import com.amazon.kindle.kindlet.ui.KPanel;
-import com.amazon.kindle.kindlet.ui.KTextComponent;
 import com.amazon.kindle.kindlet.util.Timer;
 import com.amazon.kindle.kindlet.util.TimerTask;
+import homeassistant.display.kindle.ui.SensorPanel;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import java.awt.BorderLayout;
 import java.awt.GridLayout;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.text.MessageFormat;
 
 public class HomeAssistantKindleDisplay extends AbstractKindlet {
 
     private Timer timer;
 
-    private KLabelMultiline temperatureLabel;
-    private KLabelMultiline humidityLabel;
-    private KLabelMultiline airQualityLabel;
+    private SensorPanel temperaturePanel = new SensorPanel();
+    private SensorPanel humidityPanel = new SensorPanel();
+    private SensorPanel airQualityPanel = new SensorPanel();
 
     public void create(KindletContext context) {
         super.create(context);
 
-        KPanel panel = new KPanel(new BorderLayout(5, 5));
-        panel.setLayout(new GridLayout(0, 1));
+        GridLayout gridLayout = new GridLayout(0, 1);
 
-        temperatureLabel = new KLabelMultiline();
-        temperatureLabel.setRows(KTextComponent.SHOW_ALL_LINES);
-        panel.add(temperatureLabel);
-
-        humidityLabel = new KLabelMultiline();
-        humidityLabel.setRows(KTextComponent.SHOW_ALL_LINES);
-        panel.add(humidityLabel);
-
-        airQualityLabel = new KLabelMultiline();
-        airQualityLabel.setRows(KTextComponent.SHOW_ALL_LINES);
-        panel.add(airQualityLabel);
-
+        KPanel panel = new KPanel(gridLayout);
+        panel.add(temperaturePanel);
+        panel.add(humidityPanel);
+        panel.add(airQualityPanel);
         context.getRootContainer().add(panel);
     }
 
@@ -58,11 +45,9 @@ public class HomeAssistantKindleDisplay extends AbstractKindlet {
 
     public void stop() {
         super.stop();
-
         if (timer != null) {
             timer.cancel();
         }
-
     }
 
     private void scheduleNextTimerRun() {
@@ -76,31 +61,34 @@ public class HomeAssistantKindleDisplay extends AbstractKindlet {
     }
 
     private void loadDataFromServer() {
-        updateSensor("room_temperature", temperatureLabel);
-        updateSensor("room_humidity", humidityLabel);
-        updateSensor("room_air_quality", airQualityLabel);
+        updateSensor("room_temperature", temperaturePanel);
+        updateSensor("room_humidity", humidityPanel);
+        updateSensor("room_air_quality", airQualityPanel);
     }
 
-    private void updateSensor(final String sensorName, KLabel label) {
+    private void updateSensor(final String sensorName, SensorPanel sensorPanel) {
+        SensorPanel.Data data = getSensorData(sensorName, sensorPanel);
+        if (data == null) return;
+        sensorPanel.showData(data);
+    }
 
+    private SensorPanel.Data getSensorData(String sensorName, SensorPanel label) {
         String urlString = "http://192.168.1.21:8123/api/states/sensor." + sensorName;
 
         URL url;
         try {
             url = new URL(urlString);
         } catch (MalformedURLException e) {
-            showText(e.getMessage(), label);
             e.printStackTrace();
-            return;
+            return null;
         }
 
         InputStream stream;
         try {
             stream = url.openStream();
         } catch (IOException e) {
-            showText(e.getMessage(), label);
             e.printStackTrace();
-            return;
+            return null;
         }
 
         Object unknownJson;
@@ -110,24 +98,17 @@ public class HomeAssistantKindleDisplay extends AbstractKindlet {
         try {
             unknownJson = new JSONParser().parse(reader);
         } catch (ParseException e) {
-            showText(e.getMessage(), label);
             e.printStackTrace();
-            return;
+            return null;
         } catch (IOException e) {
-            showText(e.getMessage(), label);
             e.printStackTrace();
-            return;
+            return null;
         } finally {
             try {
                 reader.close();
             } catch (IOException e) {
                 e.printStackTrace();
-                showText(e.getMessage(), label);
             }
-        }
-
-        if (!(unknownJson instanceof JSONObject)) {
-            return;
         }
 
         JSONObject json = (JSONObject) unknownJson;
@@ -138,14 +119,7 @@ public class HomeAssistantKindleDisplay extends AbstractKindlet {
         String friendlyName = ((String) attributes.get("friendly_name"));
         String unitOfMeasurement = ((String) attributes.get("unit_of_measurement"));
 
-        String text = MessageFormat.format("{0}: {1} {2}", new Object[]{friendlyName, state, unitOfMeasurement});
-
-        showText(text, label);
-    }
-
-    private void showText(String text, KLabel label) {
-        label.setText(text);
-        label.repaint();
+        return new SensorPanel.Data(friendlyName, state, unitOfMeasurement);
     }
 
 }
