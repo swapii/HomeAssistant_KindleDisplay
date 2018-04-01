@@ -8,6 +8,7 @@ buildscript {
         amazonEbookLibsDir = localProperties.getProperty('amazon_ebook_libs_dir')
         kindleHost = localProperties.getProperty('kindle_host')
         kindleIdentityFile = localProperties.getProperty('kindle_identity_file')
+        kindleJavaRuntimeLibsDir = localProperties.getProperty('kindle_java_runtime_libs_dir')
     }
 
     repositories {

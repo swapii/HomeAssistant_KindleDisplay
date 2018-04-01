@@ -89,4 +89,5 @@ task deployToKindleOverSSH(dependsOn: 'azw2', description: 'Deploy AZW2 to Kindl
 
 dependencies {
     implementation fileTree(dir: amazonEbookLibsDir, include: ['*.jar'])
+    implementation fileTree(dir: kindleJavaRuntimeLibsDir, include: ['*.jar'])
 }
