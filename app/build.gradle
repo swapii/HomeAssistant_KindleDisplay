@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'org.hidetake.ssh' version '2.9.0'
 }
 
 sourceCompatibility = JavaVersion.VERSION_1_4
@@ -30,9 +31,7 @@ jar {
 def signedJar = new File(new File(project.buildDir, 'tmp/jar/signed'), jar.archivePath.name)
 
 task signJar(dependsOn: 'jar', description: 'Sign JAR', group: 'Build') {
-
     def originalJar = jar.archivePath
-
     inputs.file(originalJar)
     outputs.file(signedJar)
     doLast {
@@ -51,22 +50,42 @@ task signJar(dependsOn: 'jar', description: 'Sign JAR', group: 'Build') {
     }
 }
 
-task azw2(dependsOn: 'signJar', description: 'Copy JAR to AZW2', group: 'Build') {
+def resultAppFileDir = new File(project.buildDir, 'app')
+def resultAppFile = new File(resultAppFileDir, signedJar.name.replace('.jar', '.azw2'))
 
+task azw2(dependsOn: 'signJar', description: 'Copy JAR to AZW2', group: 'Build') {
     def originalJar = signedJar
-    def resultAppFile = new File(project.buildDir, 'app')
     inputs.file(originalJar)
-    outputs.file(resultAppFile)
+    outputs.file(resultAppFileDir)
     doLast {
         copy {
             from originalJar
-            into resultAppFile
+            into resultAppFileDir
             rename { name -> name.replace('.jar', '.azw2') }
         }
     }
 }
 
 assemble.finalizedBy azw2
+
+remotes {
+    kindle {
+        host = kindleHost
+        user = 'root'
+        identity = file(kindleIdentityFile)
+    }
+}
+
+task deployToKindleOverSSH(dependsOn: 'azw2', description: 'Deploy AZW2 to Kindle over SSH', group: 'Deploy') {
+    inputs.file(resultAppFile)
+    doLast {
+        ssh.run {
+            session(remotes.kindle) {
+                put from: resultAppFile, into: '/mnt/us/documents/'
+            }
+        }
+    }
+}
 
 dependencies {
     implementation fileTree(dir: amazonEbookLibsDir, include: ['*.jar'])

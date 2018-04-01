@@ -6,6 +6,12 @@ buildscript {
 
     ext {
         amazonEbookLibsDir = localProperties.getProperty('amazon_ebook_libs_dir')
+        kindleHost = localProperties.getProperty('kindle_host')
+        kindleIdentityFile = localProperties.getProperty('kindle_identity_file')
+    }
+
+    repositories {
+        jcenter()
     }
 
 }
