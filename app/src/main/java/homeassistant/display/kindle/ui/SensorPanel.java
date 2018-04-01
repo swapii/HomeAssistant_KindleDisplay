@@ -5,7 +5,6 @@ import com.amazon.kindle.kindlet.ui.KLabel;
 import com.amazon.kindle.kindlet.ui.KPanel;
 
 import java.awt.BorderLayout;
-import java.awt.Font;
 import java.text.MessageFormat;
 
 public class SensorPanel extends KPanel {
@@ -14,13 +13,8 @@ public class SensorPanel extends KPanel {
     private KLabel nameLabel = new KLabel();
 
     {
-        Font font = valueLabel.getFont();
-        valueLabel.setFont(new Font(
-                font.getName(),
-                font.getStyle(),
-                font.getSize() * 5
-        ));
         valueLabel.setHorizontalAlignment(KLabel.CENTER);
+        new AutoTextSizeMediator(valueLabel);
     }
 
     {
