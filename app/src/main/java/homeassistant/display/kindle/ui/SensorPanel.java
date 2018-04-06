@@ -23,9 +23,11 @@ public class SensorPanel extends KPanel {
 
     {
         setLayout(new BorderLayout());
-        add(KBox.createVerticalStrut(30), BorderLayout.NORTH);
         add(getContent(), BorderLayout.CENTER);
+        add(KBox.createVerticalStrut(30), BorderLayout.NORTH);
         add(KBox.createVerticalStrut(30), BorderLayout.SOUTH);
+        add(KBox.createHorizontalStrut(30), BorderLayout.EAST);
+        add(KBox.createHorizontalStrut(30), BorderLayout.WEST);
     }
 
     private KPanel getContent() {
