@@ -1,10 +1,15 @@
 plugins {
     id 'java'
     id 'org.hidetake.ssh' version '2.9.0'
+    id 'com.github.johnrengelman.shadow' version '2.0.3'
 }
 
 sourceCompatibility = JavaVersion.VERSION_1_4
 targetCompatibility = JavaVersion.VERSION_1_4
+
+configurations {
+    fat
+}
 
 jar {
     manifest {
@@ -28,30 +33,56 @@ jar {
     }
 }
 
-def signedJar = new File(new File(project.buildDir, 'tmp/jar/signed'), jar.archivePath.name)
+shadowJar {
+    configurations = [project.configurations.fat]
+    exclude '**/*.java'
+}
 
-task signJar(dependsOn: 'jar', description: 'Sign JAR', group: 'Build') {
-    def originalJar = jar.archivePath
+remotes {
+    kindle {
+        host = kindleHost
+        user = 'root'
+        identity = file(kindleIdentityFile)
+    }
+}
+
+def signedJar = new File(shadowJar.archivePath.parent, shadowJar.archivePath.name.replace('.jar', '-signed.jar'))
+
+task signJar(dependsOn: 'shadowJar', description: 'Sign JAR', group: 'Build') {
+
+    def originalJar = shadowJar.archivePath
+
     inputs.file(originalJar)
     outputs.file(signedJar)
+
     doLast {
+
         copy {
             from originalJar
-            into signedJar.parentFile.absolutePath
+            into signedJar.parent
+            rename { name -> signedJar.name }
         }
+
         ['dktest', 'ditest', 'dntest'].each { key ->
             ant.signjar(
-                    jar: signedJar,
+                    jar: signedJar.absolutePath,
                     keystore: new File(project.projectDir, 'developer.keystore'),
                     storepass: 'password',
                     alias: key,
             )
         }
+
     }
+
 }
 
 def resultAppFileDir = new File(project.buildDir, 'app')
-def resultAppFile = new File(resultAppFileDir, signedJar.name.replace('.jar', '.azw2'))
+def resultAppFile = new File(
+        resultAppFileDir,
+        signedJar.name
+                .replace('-all-signed', '')
+                .replace('.jar', '.azw2')
+)
 
 task azw2(dependsOn: 'signJar', description: 'Copy JAR to AZW2', group: 'Build') {
     def originalJar = signedJar
@@ -61,20 +92,12 @@ task azw2(dependsOn: 'signJar', description: 'Copy JAR to AZW2', group: 'Build')
         copy {
             from originalJar
             into resultAppFileDir
-            rename { name -> name.replace('.jar', '.azw2') }
+            rename { name -> resultAppFile.name }
         }
     }
 }
 
-assemble.finalizedBy azw2
-
-remotes {
-    kindle {
-        host = kindleHost
-        user = 'root'
-        identity = file(kindleIdentityFile)
-    }
-}
+assemble.dependsOn azw2
 
 task deployToKindleOverSSH(dependsOn: 'azw2', description: 'Deploy AZW2 to Kindle over SSH', group: 'Deploy') {
     inputs.file(resultAppFile)
@@ -90,4 +113,6 @@ task deployToKindleOverSSH(dependsOn: 'azw2', description: 'Deploy AZW2 to Kindl
 dependencies {
     implementation fileTree(dir: amazonEbookLibsDir, include: ['*.jar'])
     implementation fileTree(dir: kindleJavaRuntimeLibsDir, include: ['*.jar'])
+    implementation fileTree(dir: appLibsDir, include: ['*.jar'])
+    fat fileTree(dir: appLibsDir, include: ['*.jar'])
 }

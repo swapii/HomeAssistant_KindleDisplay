@@ -1,15 +1,17 @@
 package homeassistant.display.kindle;
 
-import com.amazon.kindle.kindlet.AbstractKindlet;
 import com.amazon.kindle.kindlet.KindletContext;
 import com.amazon.kindle.kindlet.ui.KPanel;
 import com.amazon.kindle.kindlet.util.Timer;
 import com.amazon.kindle.kindlet.util.TimerTask;
 import homeassistant.display.kindle.ui.SensorPanel;
+import ixtab.jailbreak.Jailbreak;
+import ixtab.jailbreak.SuicidalKindlet;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
+import java.awt.EventQueue;
 import java.awt.GridLayout;
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,16 +19,21 @@ import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-public class HomeAssistantKindleDisplay extends AbstractKindlet {
+public class HomeAssistantKindleDisplay extends SuicidalKindlet {
 
     private Timer timer;
+
+    private PowerDaemon powerDaemon = new PowerDaemon();
+    private boolean isScreenSaverWasEnabled;
 
     private SensorPanel temperaturePanel = new SensorPanel();
     private SensorPanel humidityPanel = new SensorPanel();
     private SensorPanel airQualityPanel = new SensorPanel();
 
-    public void create(KindletContext context) {
-        super.create(context);
+    private boolean started;
+
+    public void onCreate(KindletContext context) {
+        super.onCreate(context);
 
         GridLayout gridLayout = new GridLayout(0, 1);
 
@@ -37,17 +44,63 @@ public class HomeAssistantKindleDisplay extends AbstractKindlet {
         context.getRootContainer().add(panel);
     }
 
-    public void start() {
-        super.start();
+    public void onStart() {
+
+        if (started) {
+            return;
+        }
+
+        super.onStart();
+
+        started = true;
+
+        if (!jailbreak.isAvailable()) {
+            throw new IllegalStateException("Jailbreak not available");
+        }
+
+        if (!jailbreak.isEnabled()) {
+            throw new IllegalStateException("Can't enable ixtab.jailbreak");
+        }
+
+        if (!((HomeAssistantKindleDisplayJailbreak) jailbreak).requestPermissions()) {
+            throw new IllegalStateException("Can't request all permissions");
+        }
+
+        EventQueue.invokeLater(new Runnable() {
+            public void run() {
+
+                isScreenSaverWasEnabled = powerDaemon.isScreenSaverEnabled();
+
+                if (isScreenSaverWasEnabled) {
+                    powerDaemon.disableScreenSaver();
+                }
+
+            }
+        });
+
         loadDataFromServer();
         scheduleNextTimerRun();
     }
 
-    public void stop() {
-        super.stop();
+    public void onStop() {
+
+        EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                if (isScreenSaverWasEnabled) {
+                    powerDaemon.enableScreenSaver();
+                }
+            }
+        });
+
         if (timer != null) {
             timer.cancel();
         }
+
+        super.onStop();
+    }
+
+    protected Jailbreak instantiateJailbreak() {
+        return new HomeAssistantKindleDisplayJailbreak();
     }
 
     private void scheduleNextTimerRun() {
