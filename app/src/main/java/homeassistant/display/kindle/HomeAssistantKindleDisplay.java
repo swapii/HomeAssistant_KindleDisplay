@@ -5,6 +5,7 @@ import com.amazon.kindle.kindlet.ui.KPanel;
 import com.amazon.kindle.kindlet.util.Timer;
 import com.amazon.kindle.kindlet.util.TimerTask;
 import homeassistant.display.kindle.ui.SensorPanel;
+import homeassistant.display.kindle.ui.ValuePanel;
 import ixtab.jailbreak.Jailbreak;
 import ixtab.jailbreak.SuicidalKindlet;
 import org.json.simple.JSONObject;
@@ -18,6 +19,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class HomeAssistantKindleDisplay extends SuicidalKindlet {
 
@@ -26,6 +29,7 @@ public class HomeAssistantKindleDisplay extends SuicidalKindlet {
     private PowerDaemon powerDaemon = new PowerDaemon();
     private boolean isScreenSaverWasEnabled;
 
+    private ValuePanel timePanel = new ValuePanel();
     private SensorPanel temperaturePanel = new SensorPanel();
     private SensorPanel humidityPanel = new SensorPanel();
     private SensorPanel airQualityPanel = new SensorPanel();
@@ -38,6 +42,7 @@ public class HomeAssistantKindleDisplay extends SuicidalKindlet {
         GridLayout gridLayout = new GridLayout(0, 1);
 
         KPanel panel = new KPanel(gridLayout);
+        panel.add(timePanel);
         panel.add(temperaturePanel);
         panel.add(humidityPanel);
         panel.add(airQualityPanel);
@@ -78,7 +83,7 @@ public class HomeAssistantKindleDisplay extends SuicidalKindlet {
             }
         });
 
-        loadDataFromServer();
+        updateScreenInfo();
         scheduleNextTimerRun();
     }
 
@@ -107,10 +112,19 @@ public class HomeAssistantKindleDisplay extends SuicidalKindlet {
         timer = new Timer();
         timer.schedule(new TimerTask() {
             public void run() {
-                loadDataFromServer();
+                updateScreenInfo();
                 scheduleNextTimerRun();
             }
         }, 10000);
+    }
+
+    private void updateScreenInfo() {
+        updateTime();
+        loadDataFromServer();
+    }
+
+    private void updateTime() {
+        timePanel.showValue("Time", new SimpleDateFormat("HH:mm").format(new Date()));
     }
 
     private void loadDataFromServer() {
@@ -125,7 +139,7 @@ public class HomeAssistantKindleDisplay extends SuicidalKindlet {
         sensorPanel.showData(data);
     }
 
-    private SensorPanel.Data getSensorData(String sensorName, SensorPanel label) {
+    private SensorPanel.Data getSensorData(String sensorName, ValuePanel label) {
         String urlString = "http://192.168.1.21:8123/api/states/sensor." + sensorName;
 
         URL url;
